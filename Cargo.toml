@@ -10,8 +10,7 @@ documentation = "https://github.com/shunsock/morse-code-japanese"
 repository = "https://github.com/shunsock/morse-code-japanese"
 
 readme = "README.md"
-keywords = ["encoding","decoding","morse"]
-categories = ["encoding","decoding","morse"]
+keywords = ["encoding"]
 license = "MIT"
 
 [dependencies]
