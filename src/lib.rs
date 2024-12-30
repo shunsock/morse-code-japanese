@@ -20,12 +20,12 @@ impl std::error::Error for MorseCodeError {}
 pub struct MorseCode {
     to_morse: HashMap<char, &'static str>,
     from_morse: HashMap<&'static str, char>,
-    dot: char,
-    dash: char,
+    dot: String,
+    dash: String,
 }
 
 impl MorseCode {
-    pub fn new(dot: Option<char>, dash: Option<char>) -> Self {
+    pub fn new(dot: Option<&str>, dash: Option<&str>) -> Self {
         let mut to_morse = HashMap::new();
         let mut from_morse = HashMap::new();
 
@@ -90,59 +90,49 @@ impl MorseCode {
         MorseCode {
             to_morse,
             from_morse,
-            dot: dot.unwrap_or('.'),
-            dash: dash.unwrap_or('-'),
+            dot: dot.unwrap_or(".").to_string(),
+            dash: dash.unwrap_or("-").to_string(),
         }
     }
 
     fn replace(&self, code: &str) -> String {
         code.chars()
             .map(|c| match c {
-                '.' => self.dot,
-                '-' => self.dash,
-                _ => c,
+                '.' => self.dot.clone(),
+                '-' => self.dash.clone(),
+                _ => c.to_string(),
             })
             .collect()
     }
 
-    pub fn encode(&self, text: &[char]) -> Result<Vec<String>, MorseCodeError> {
-        text.iter()
-            .map(|&c| {
+    pub fn encode(&self, text: &str) -> Result<String, MorseCodeError> {
+        text.chars()
+            .map(|c| {
                 self.to_morse
                     .get(&c)
                     .map(|s| self.replace(s))
                     .ok_or(MorseCodeError::UnknownCharacter(c))
             })
-            .collect()
+            .collect::<Result<Vec<String>, _>>()
+            .map(|v| v.join(" "))
     }
 
-    pub fn decode(&self, morse: &[&str]) -> Result<Vec<char>, MorseCodeError> {
+    pub fn decode(&self, morse: &str) -> Result<String, MorseCodeError> {
         morse
-            .iter()
-            .map(|&code| {
+            .split_whitespace()
+            .map(|code| {
                 let replaced: String = code
                     .chars()
-                    .map(|c| match c {
-                        c if c == self.dot => '.',
-                        c if c == self.dash => '-',
-                        _ => c,
-                    })
-                    .collect();
+                    .collect::<String>()
+                    .replace(&self.dot, ".")
+                    .replace(&self.dash, "-");
+
                 self.from_morse
                     .get(replaced.as_str())
                     .copied()
                     .ok_or(MorseCodeError::UnknownMorseCode(code.to_string()))
             })
-            .collect()
-    }
-
-    pub fn encode_from_string(&self, text: &str) -> Result<String, MorseCodeError> {
-        self.encode(&text.chars().collect::<Vec<_>>())
-            .map(|v| v.join(" "))
-    }
-
-    pub fn decode_to_string(&self, text: &str) -> Result<String, MorseCodeError> {
-        self.decode(&text.split_whitespace().collect::<Vec<_>>())
+            .collect::<Result<Vec<char>, _>>()
             .map(|v| v.into_iter().collect::<String>())
     }
 }
@@ -152,45 +142,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_unknown_morse() {
-        let morse = MorseCode::new(None, None);
-        let result: Result<Vec<char>, MorseCodeError> = morse.decode(&["...."]);
-        assert_eq!(result, Ok(vec!['ヌ']));
+    fn test_encode() {
+        let morse = MorseCode::new(Some("."), Some("-"));
+        assert_eq!(morse.encode("イロハ").unwrap(), ".- .-.- -...");
+        assert_eq!(morse.encode("ヘ").unwrap(), ".");
+        assert!(matches!(
+            morse.encode("あ"),
+            Err(MorseCodeError::UnknownCharacter('あ'))
+        ));
     }
 
     #[test]
-    fn test_single_characters() {
-        let morse = MorseCode::new(None, None);
-        let input: Vec<char> = vec!['ア', 'イ', 'ウ'];
-        let encoded: Result<Vec<String>, MorseCodeError> = morse.encode(&input);
-        assert_eq!(encoded.unwrap(), vec!["--.--", ".-", "..-"]);
-
-        let decoded: Result<Vec<char>, MorseCodeError> = morse.decode(&["--.--", ".-", "..-"]);
-        assert_eq!(decoded.unwrap(), input);
+    fn test_decode() {
+        let morse = MorseCode::new(Some("."), Some("-"));
+        assert_eq!(morse.decode(".- .-.- -...").unwrap(), "イロハ");
+        assert_eq!(morse.decode(".").unwrap(), "ヘ");
+        assert!(matches!(
+            morse.decode("...---"),
+            Err(MorseCodeError::UnknownMorseCode(ref code)) if code == "...---"
+        ));
     }
 
     #[test]
     fn test_custom_symbols() {
-        let morse = MorseCode::new(Some('*'), Some('/'));
-        let input: Vec<char> = vec!['ア', 'イ', 'ウ'];
-        let encoded: Result<Vec<String>, MorseCodeError> = morse.encode(&input);
-        assert_eq!(encoded.unwrap(), vec!["//*//", "*/", "**/"]);
-
-        let decoded: Result<Vec<char>, MorseCodeError> = morse.decode(&["//*//", "*/", "**/"]);
-        assert_eq!(decoded.unwrap(), input);
-    }
-
-    #[test]
-    fn test_encode_from_string() {
-        let morse = MorseCode::new(None, None);
-        let result: Result<String, MorseCodeError> = morse.encode_from_string("アイウ");
-        assert_eq!(result.unwrap(), "--.-- .- ..-");
-    }
-
-    #[test]
-    fn test_decode_to_string() {
-        let morse = MorseCode::new(None, None);
-        let result: Result<String, MorseCodeError> = morse.decode_to_string("--.-- .- ..-");
-        assert_eq!(result.unwrap(), "アイウ");
+        let morse = MorseCode::new(Some("*"), Some("~"));
+        assert_eq!(morse.encode("イロハ").unwrap(), "*~ *~*~ ~***");
+        assert_eq!(morse.decode("*~ *~*~ ~***").unwrap(), "イロハ");
     }
 }
