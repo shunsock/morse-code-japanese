@@ -1,0 +1,11 @@
+version: '3'
+
+tasks:
+  validate:
+    desc: "cargo check, fmt, clippy, build, and test"
+    cmds:
+      - cargo check
+      - cargo fmt
+      - cargo clippy
+      - cargo build
+      - cargo test
