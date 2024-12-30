@@ -7,22 +7,58 @@ Simple Morse code converter for Japanese text. (和文モールス信号変換�
 By default, the library uses dot and dash for Morse code.
 
 ```rust
-use morse_code_japanese::MorseCodeJapanese;
+use morse_code_japanese::MorseCode;
 
-let morse = MorseCode::new(None, None);
-let result: Result<String, MorseCodeError> = morse.encode_from_string("アイウ");
-assert_eq!(result.unwrap(), "--.-- .- ..-");
+fn main() {
+    let morse = MorseCode::new(None, None);
+
+    let raw: &str = "コンニチハセカイ";
+    println!("raw: {:?}", raw.clone());
+
+    let encoded: String = morse.encode(&raw).unwrap();
+    println!("encoded: {:?}", encoded);
+
+    let decoded: String = morse.decode(&encoded).unwrap();
+    println!("decoded: {:?}", decoded);
+}
+```
+
+This will output:
+
+```shell
+raw: "コンニチハセカイ"
+encoded: "---- .-.-. -.-. ..-. -... .---. .-.. .-"
+decoded: "コンニチハセカイ"
 ```
 
 You can also use other characters for Morse code.
 
 ```rust
-use morse_code_japanese::MorseCodeJapanese;
+use morse_code_japanese::MorseCode;
 
-let morse = MorseCode::new(Some('🇯🇵'), Some('🗻'));
-let result: Result<String, MorseCodeError> = morse.encode_from_string("アイウ");
-assert_eq!(result.unwrap(), "🇯🇵🇯🇵🗻 🇯🇵🇯🇵 🇯🇵🗻 🇯🇵🇯🇵🗻");
+fn main() {
+    let morse = MorseCode::new(Some("🇯🇵"), Some("🗻"));
+
+    let raw: &str = "コンニチハセカイ";
+    println!("raw: {:?}", raw.clone());
+
+    let encoded: String = morse.encode(&raw).unwrap();
+    println!("encoded: {:?}", encoded);
+
+    let decoded: String = morse.decode(&encoded).unwrap();
+    println!("decoded: {:?}", decoded);
+}
 ```
+
+This will output:
+
+```shell
+raw: "コンニチハセカイ"
+encoded: "🗻🗻🗻🗻 🇯🇵🗻🇯🇵🗻🇯🇵 🗻🇯🇵🗻🇯🇵 🇯🇵🇯🇵🗻🇯🇵 🗻🇯🇵🇯🇵🇯🇵 🇯🇵🗻🗻🗻🇯🇵 🇯🇵🗻🇯🇵🇯🇵 🇯🇵🗻"
+decoded: "コンニチハセカイ"
+```
+
+Yes! it's more like [COOL JAPAN](https://en.wikipedia.org/wiki/Cool_Japan)!
 
 ## License
 
