@@ -1,6 +1,17 @@
 [package]
 name = "morse_code_japanese"
 version = "0.1.0"
+authors = ["Shunsuke Tsuchiya <s.tsuchiya.business@gmail.com>"]
 edition = "2021"
+
+description = "This is a library for handle Japanese Morse Code. (和文モールス符号)"
+
+documentation = "https://github.com/shunsock/morse-code-japanese"
+repository = "https://github.com/shunsock/morse-code-japanese"
+
+readme = "README.md"
+keywords = ["encoding","decoding","morse"]
+categories = ["encoding","decoding","morse"]
+license = "MIT"
 
 [dependencies]
