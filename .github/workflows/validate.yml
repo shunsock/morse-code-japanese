@@ -1,12 +1,12 @@
 name: validate
 
+# build ジョブは全 PR で起動し required status check を必ず報告する。
+# workflow-level の paths filter を使うと、無関係な PR (例: github-actions 更新) では
+# workflow 自体が発火せず required check が「待ち」で詰まる。それを避けるため paths 判定は
+# ジョブ内部で行い、rust に無関係な変更では重い cargo ステップだけを skip する。
 on:
   pull_request:
     branches: ["main"]
-    paths:
-      - "src/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
 
 permissions:
   contents: read
@@ -29,11 +29,27 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
+
+      # rust に関わる変更があるかを PR 差分から判定する。無ければ以降を skip する。
+      - name: Detect rust changes
+        id: filter
+        uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
+        with:
+          filters: |
+            rust:
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+
       - name: Build
+        if: steps.filter.outputs.rust == 'true'
         run: cargo build --verbose
       - name: Check
+        if: steps.filter.outputs.rust == 'true'
         run: cargo check --verbose
       - name: Clippy
+        if: steps.filter.outputs.rust == 'true'
         run: cargo clippy --verbose
       - name: Run tests
+        if: steps.filter.outputs.rust == 'true'
         run: cargo test --verbose
